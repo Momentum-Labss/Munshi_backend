@@ -1,0 +1,30 @@
+{
+  "name": "munshi",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --hot run ./src/index.ts"
+  },
+  "prisma" : {
+    "seed" : "bun prisma/seed.ts" 
+  },
+
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
+    "express": "^5.1.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "prisma": "^6.19.0",
+    "resend": "^6.4.2",
+    "zod": "^4.1.12"
+  }
+}

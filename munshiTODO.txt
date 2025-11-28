@@ -1,0 +1,50 @@
+
+
+### Phase 1: The Core App (The "Must-Haves")
+
+* [ ] **Build the Calculator UI:** The main screen is a simple calculator.
+* [ ] **Add Calculator Buttons:** Create the `[Cash Sale]` and `[Add to Udhaar]` buttons.
+* [ ] **Build the "Udhaar" (Credit) Flow:**
+    * [ ] Create a list of customers (the "Khata").
+    * [ ] Allow adding a new customer.
+    * [ ] Allow adding an `udhaar` amount to a customer.
+* [ ] **Build the "Training Mode" (Smart Basket):**
+    * [ ] After a `[Cash Sale]`, show a popup: "What did you just sell?"
+    * [ ] Let the user create new items (e.g., "Shampoo", "100") and save them as a "basket."
+* [ ] **Build the Bill Scan (OCR) Feature:**
+    * [ ] Add an "Inventory" tab.
+    * [ ] Add a "Scan Bill" button that uses the camera.
+    * [ ] Integrate an OCR API (like Google or Azure) to read the bill.
+    * [ ] Save the supplier's name (e.g., "Hind-Co") and the items scanned.
+
+---
+
+### Phase 2: The "Agent" Features (The "Wow" Demo)
+
+* [ ] **Build the "Smart Basket" Agent:**
+    * [ ] **Logic:** After the "Training Mode" is done, when the user enters a `[Cash Sale]` (e.g., `₹140`), the agent *silently* checks if it's a unique match (e.g., "Shampoo" + "Cold Drink").
+    * [ ] **Action:** If it's a unique match, automatically reduce the inventory stock.
+* [ ] **Build the "Fat-Finger" Agent:**
+    * [ ] **Logic:** When an `udhaar` is added, check if the amount is a *huge* anomaly (e.g., 20x the customer's average).
+    * [ ] **Action:** Send a push notification: "Wait! Is ₹1,000 for Raju correct?"
+* [ ] **Build the "Re-ordering" Agent:**
+    * [ ] **Logic:** In the "Inventory" tab, find items where `stock < 5`.
+    * [ ] **Action:** Show a button: "You're low on Shampoo. Tap to draft a re-order from 'Hind-Co'?"
+* [ ] **Build the "Dead Stock" Agent:**
+    * [ ] **Logic:** Run a check for items not sold in 60+ days.
+    * [ ] **Action:** Show a "Dead Stock" card in a "Reports" tab.
+* [ ] **Build the Voice Agent (Query Mode):**
+    * [ ] Add a "mic" icon to the app.
+    * [ ] Allow the user to *ask questions*: "What's my profit?" or "How many shampoos are left?"
+
+---
+
+### Phase 3: The Tech Stack (The "How-To")
+
+* [ ] **Frontend:** React Native (or Flutter).
+* [ ] **Backend:** NodeJS .
+* [ ] **Database:** Postgres.
+* [ ] **OCR API:** Google Document AI or Azure AI Document Intelligence or Deepseek OCR.
+* [ ] **Agent "Brain":** Gemini 2.5 Pro.
+* [ ] **Agent Framework:** LangChain.
+* [ ] **Alerts:** A push notification service (like Firebase).

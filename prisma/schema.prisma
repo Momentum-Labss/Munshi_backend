@@ -1,0 +1,133 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  // engineType = "client"
+  runtime = "bun"
+}
+ 
+
+datasource db {
+  provider = "postgresql"
+  url= env("DATABASE_URL")
+}
+
+enum PaymentMode {
+  CASH
+  UDHAAR
+  UPI
+}
+
+enum TimeBucket {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum PreferedLanguage {
+  Hindi
+  English
+}
+
+enum ProductType {
+  Loose
+  Packaged
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  emailId   String  @unique
+  isVerified Boolean @default(false)
+  profiles  Profile?
+  products Product[]
+  transaction Transaction[]
+  customers Customer[]
+}
+
+model Profile {
+  id               Int              @id @default(autoincrement())
+  name             String
+  number           String?
+  address          String?
+  preferedLanguage PreferedLanguage @default(English)
+  userId           Int @unique
+  user             User             @relation(fields: [userId], references: [id])
+}
+
+
+model Product {
+  id String @id @default(uuid())
+  name String
+  type ProductType
+  price Decimal @db.Decimal(10,2)
+  stock Decimal @default(0) @db.Decimal(10,3)
+  lowStockThreshold  Decimal @default(5)
+  icon String @default("📦")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  userId Int
+  user User @relation(fields: [userId],  references: [id])
+  smartPriceMaps    SmartPriceMap[] 
+  @@index([name])
+}
+
+
+model SmartPriceMap {
+  id               String   @id @default(uuid())
+  
+  triggerPrice     Decimal  @db.Decimal(10, 2)
+  
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id])
+  
+  productName      String  
+  
+  globalSalesCount Int      @default(0)
+  
+  timeBuckets      Json     @default("{}")   
+  lastSoldAt       DateTime @default(now())
+  @@index([triggerPrice]) 
+}
+
+
+model Transaction {
+  id          String      @id @default(uuid())
+  
+  totalAmount Decimal     @db.Decimal(10, 2)
+  mode        PaymentMode @default(CASH)  
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  customerId  String?
+  
+  items       Json
+
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+   
+  timeBucket  TimeBucket?
+  
+  createdAt   DateTime    @default(now())
+}
+
+model Customer {
+  id               String   @id @default(uuid())
+  name             String
+  phone            String?
+  
+  currentDebt      Decimal  @default(0) @db.Decimal(10, 2)
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  
+  lastPaymentDate  DateTime?
+  lastPurchaseDate DateTime?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  transactions     Transaction[]
+}
