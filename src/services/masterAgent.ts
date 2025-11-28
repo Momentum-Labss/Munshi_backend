@@ -50,7 +50,8 @@ export const MasterAgentService = {
         return {
           type: 'INVENTORY_DRAFT',
           message: "Ji boss, maine list bana li hai. Check karlo?",
-          data: draft
+          data: draft,
+          isVisual : true
         };
 
         case 'FINANCIAL_QUERY':
@@ -59,13 +60,16 @@ export const MasterAgentService = {
             return {
                 type: 'FINANCE_ANSWER',
                 message: analysis.reply,
-                data: analysis.dataPoint
+                data: analysis.dataPoint,
+                isVisual : false
+
             };
       default:
         return {
           type: 'UNKNOWN',
           message: "Maaf karna boss, main samjha nahi. Inventory add karu ya hisab batau?",
-          data: null
+          data: null,
+          isVisual : false
         };
     }
   }
