@@ -2,7 +2,7 @@ import { StateGraph, Annotation } from "@langchain/langgraph";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { z } from "zod";
 import prisma from "../utils/prismaClient";
-import { PaymentMode, TimeBucket, ProductType } from "../generated/prisma/enums";
+import { PaymentMode } from "../generated/prisma/enums";
 
 // ============================================================
 // PART 1: TRANSACTION EVALUATION AGENT (Real-time Risk Assessment)
@@ -195,7 +195,7 @@ const controllerAgent = async (state: CfoState) => {
     1. **BLOCK** if:
        - Customer Risk = HIGH AND mode = UDHAAR
        - Store Credit Ratio > 1.5 (liquidity crisis)
-       - New customer (0 history) asking for credit
+       - New customer (0 history) asking for credit but if the total transaction amount to small then don't block it just warn 
        - Total pending debt > ₹50,000 and new UDHAAR request
     
     2. **WARN** if:

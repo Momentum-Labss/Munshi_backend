@@ -53,7 +53,7 @@ export const salesController = {
             // We invoke the agent ONLY if:
             // 1. Payment Mode is UDHAAR (Credit Risk)
             // 2. OR Total Amount > 5000 (Fat Finger / Anomaly Risk)
-            if (mode === PaymentMode.UDHAAR || totalAmount > 5000) {
+            if (!force &&  mode === PaymentMode.UDHAAR) {
                 console.log("👮 Suspending transaction... Calling CFO Agent for Audit.");
 
                 const cfoVerdict = await CfoAgentService.evaluateTransaction(
