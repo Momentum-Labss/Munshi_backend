@@ -3,6 +3,7 @@ import { badRequest } from "../utils/http";
 import type { AuthenticatedRequest } from "../middleware/auth";
 import { SalesService } from "../services/salesService";
 import { PaymentMode } from "../generated/prisma/enums";
+import { CfoAgentService } from "../Agents/cfo";
 
 
 
@@ -43,6 +44,51 @@ export const salesController = {
         try{
             const {items, totalAmount, mode, customerId} = request.body;
             const userId = request.user?.userId || request.body.userId 
+
+            const force = request.query.force === 'true'; 
+
+            // ---------------------------------------------------------
+            // 🤖 CFO AGENT INVOCATION LOGIC
+            // ---------------------------------------------------------
+            // We invoke the agent ONLY if:
+            // 1. Payment Mode is UDHAAR (Credit Risk)
+            // 2. OR Total Amount > 5000 (Fat Finger / Anomaly Risk)
+            if (mode === PaymentMode.UDHAAR || totalAmount > 5000) {
+                console.log("👮 Suspending transaction... Calling CFO Agent for Audit.");
+                
+                const cfoVerdict = await CfoAgentService.evaluateTransaction(
+                    userId, 
+                    totalAmount, 
+                    mode, 
+                    customerId
+                );
+
+                if (cfoVerdict) {
+                    // Scenario A: BLOCK
+                    // The CFO has deemed this transaction too risky (e.g., Bad Debt).
+                    // We DO NOT allow proceeding.
+                    if (cfoVerdict.status === 'BLOCK') {
+                        return response.status(403).json({
+                            success: false,
+                            message: "Transaction Blocked by CFO",
+                            cfoDecision: cfoVerdict
+                        });
+                    }
+
+                    // Scenario B: WARN
+                    // The CFO flagged an issue (e.g., Fat Finger, High Credit Usage).
+                    // We allow proceeding ONLY IF the user explicitly confirms (force=true).
+                    if (cfoVerdict.status === 'WARN' && !force) {
+                        return response.status(409).json({ // 409 Conflict indicates user needs to resolve state
+                            success: false,
+                            message: "CFO Warning Triggered",
+                            cfoDecision: cfoVerdict,
+                            actionRequired: "Review the suggestion. To override, add ?force=true to your request URL."
+                        });
+                    }
+                }
+            }
+
             const result = await SalesService.processTransaction({
                 userId,
                 items,
