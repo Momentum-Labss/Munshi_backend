@@ -6,9 +6,6 @@ import { badRequest } from "../utils/http";
 export const udhaarController = {
     addCustomer: async (req: AuthenticatedRequest, res: Response) => {
         const userId = req.user?.userId || req.body.userId 
-        if(userId!) {
-            badRequest(response, "User Id is required")
-        }
         const { name, phone } = req.body;
         const result = await UdhaarService.createCustomer(userId, name, phone);
         return res.status(201).json({ success: true, data: result });
@@ -18,14 +15,14 @@ export const udhaarController = {
             const page = Number(req.query.page) || 1;
             const limit = Number(req.query.limit) || 10;
             const search = String(req.query.search || "");
+            const status = req.query.status as 'PAID' | 'UNPAID' | 'ALL' | undefined;
+
             const userId = req.user?.userId || req.body.userId 
-            if(userId!) {
+            if(!userId) {
                 badRequest(response, "User Id is required")
             }
-            // If ?type=debtors, filtering only those who owe money
-            const onlyDebtors = req.query.type === 'debtors';
 
-            const result = await UdhaarService.getCustomers(userId, page, limit, search, onlyDebtors);
+            const result = await UdhaarService.getCustomers(userId, page, limit, search, status);
             
             return res.status(200).json({ success: true, ...result });
         } catch (error) {

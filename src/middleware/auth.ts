@@ -35,7 +35,6 @@ export const authenticate = (
       userId: decoded.userId,
       emailId: decoded.emailId,
     }
-
     next()
   } catch (err) {
     console.error("[AUTH ERROR]", err)

@@ -77,11 +77,9 @@ export const salesController = {
                 const endDate = req.query.endDate ? new Date(String(req.query.endDate)) : undefined;
     
                 // 3. User Context (Hardcoded for Demo)
-                const {userId} = req.user?.userId || req.body.userId
+                const userId = req.user?.userId || req.body.userId
     
-                if(!userId) {
-                    badRequest(res, "Bad Request : User UD is required")
-                }
+                // console.log(userId)
                 // 4. Call Service
                 const result = await SalesService.getTransaction(userId, page, limit, {
                     mode,

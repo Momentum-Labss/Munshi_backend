@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "../utils/prismaClient";
 
 export const UdhaarService = {
     createCustomer: async (userId: number, name: string, phone: string) => {
@@ -9,11 +7,8 @@ export const UdhaarService = {
         });
     },
 
-    /**
-     * Search & List Customers
-     * @param onlyDebtors - If true, only returns people who owe money (>0)
-     */
-    getCustomers: async (userId: number, page: number, limit: number, search?: string, onlyDebtors?: boolean) => {
+
+    getCustomers: async (userId: number, page: number, limit: number, search?: string, status?: 'PAID' | 'UNPAID' | 'ALL') => {
         const skip = (page - 1) * limit;
 
         const whereClause: any = {
@@ -24,19 +19,23 @@ export const UdhaarService = {
                     { phone: { contains: search } }
                 ]
             }),
-            ...(onlyDebtors && {
-                currentDebt: { gt: 0 } // Greater than 0
-            })
         };
 
-        const total = await prisma.customer.count({ where: whereClause });
+        // Filter Logic
+        if (status === 'UNPAID') {
+            whereClause.currentDebt = { gt: 0 }; // Only people who owe money
+        } else if (status === 'PAID') {
+            whereClause.currentDebt = { lte: 0 }; // People with 0 debt
+        }
 
+        const total = await prisma.customer.count({ where: whereClause });
+        console.log(total)
         const customers = await prisma.customer.findMany({
             where: whereClause,
             skip,
             take: limit,
-            orderBy: onlyDebtors ? { currentDebt: 'desc' } : { updatedAt: 'desc' } 
-            // If looking for debtors, show highest debt first. Else show recent activity.
+            // If viewing UNPAID, sort by highest debt (risk). Otherwise sort by recency.
+            orderBy: status === 'UNPAID' ? { currentDebt: 'desc' } : { updatedAt: 'desc' } 
         });
 
         return {

@@ -6,7 +6,7 @@ interface Payload {
     [key: string]: any;
 }
  
-export function sign(payload: Payload, expiresIn: string | number = "15M"): string {
+export function sign(payload: Payload, expiresIn: string | number = "1d"): string {
     return jwt.sign(payload, SECRET_KEY, { expiresIn } as SignOptions);
 }
 
