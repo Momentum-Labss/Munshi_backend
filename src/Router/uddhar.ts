@@ -10,6 +10,6 @@ router.post("/customer", authenticate, validate(CreateCustomerSchema), udhaarCon
 
 // GET /api/v1/udhaar/customers?page=1&search=ramesh
 // GET /api/v1/udhaar/customers?type=debtors (Gets list of people who owe money)
-router.get("/customers", udhaarController.getCustomers);
+router.get("/customers",authenticate, validate,  udhaarController.getCustomers);
 
 export default router;

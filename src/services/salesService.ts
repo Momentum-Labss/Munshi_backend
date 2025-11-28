@@ -22,6 +22,12 @@ interface TransactionItem {
     isLoose: boolean;
 }
 
+interface TransactionFilters {
+    mode?: PaymentMode;
+    startDate?: Date;
+    endDate?: Date;
+}
+
 interface TransactionDTO {
     userId: number;
     items: TransactionItem[];
@@ -30,6 +36,10 @@ interface TransactionDTO {
     customerId?: string;
 }
 
+
+interface salesDTO {
+    userId : number;
+}
 
 export const SalesService = {
     getSuggestion : async (price : number, userId : number) : Promise<{packagedSuggestion : Suggestion[], looseSuggestion : Suggestion[]}> => {
@@ -178,8 +188,51 @@ export const SalesService = {
 
             return { transactionId: newTx.id, nudges };
         });
-    }
+    },
 
+    getTransaction : async (userId: number, page: number, limit: number, filters: TransactionFilters) => {
+        const skip = (page - 1) * limit;
+        const { mode, startDate, endDate } = filters;
+
+        const whereClause: any = {
+            userId: userId, // CRITICAL: Only fetch this user's data
+            
+            // Optional: Filter by Cash/Udhaar
+            ...(mode && { mode }),
+            
+            // Optional: Filter by Date Range
+            createdAt: {
+                ...(startDate && { gte: startDate }),
+                ...(endDate && { lte: endDate })
+            }
+        };
+
+        // 2. Get Total Count (for Pagination Meta)
+        const total = await prisma.transaction.count({ where: whereClause });
+
+        // 3. Fetch Data
+        const transactions = await prisma.transaction.findMany({
+            where: whereClause,
+            skip: skip,
+            take: limit,
+            orderBy: { createdAt: 'desc' }, // Newest first
+            include: {
+                customer: {
+                    select: { name: true, phone: true } // Show customer name if Udhaar
+                }
+            }
+        });
+
+        return {
+            data: transactions,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
+    }
 }
 
 
