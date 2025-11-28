@@ -61,5 +61,14 @@ export const salesController = {
                 message: "Failed to record transaction" 
             });
         }
+    },
+    getSales : async (request : AuthenticatedRequest, response : Response) => { 
+        const userId = request.user?.userId || request.body.userId 
+        
+        if(!userId) {
+            badRequest(response, "User ID is not available")
+        }
+
+        
     }
 }
