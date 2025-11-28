@@ -18,7 +18,7 @@ export const ProfileController = {
 
   async get(req: AuthenticatedRequest, res: Response) {
     try {
-      const userId = Number(req.params.userId)
+      const userId =  req.user?.userId || Number(req.params.userId)
       const profile = await ProfileService.getProfile(userId)
       return ok(res, profile)
     } catch (err: any) {

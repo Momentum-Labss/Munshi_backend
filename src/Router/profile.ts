@@ -11,8 +11,8 @@ router.post(
   validate(createProfileZSchema),
   ProfileController.create
 )
-router.get("/", authenticate, ProfileController.list)
-router.get("/:userId", authenticate, ProfileController.get)
+router.get("/", authenticate, ProfileController.get)
+router.get("/list-all", authenticate, ProfileController.list)
 router.put(
   "/:userId",
   authenticate,

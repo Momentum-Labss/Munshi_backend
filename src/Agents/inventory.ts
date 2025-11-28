@@ -1,5 +1,5 @@
 import { StateGraph, END } from "@langchain/langgraph";
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { z } from "zod";
 import prisma from "../utils/prismaClient";
 import { ProductType } from "../generated/prisma/enums";
@@ -30,10 +30,11 @@ interface AgentState {
 const cashierAgent = async (state: AgentState) => {
   console.log("🤖 Agent A (Cashier): Parsing voice command...");
 
-  const model = new ChatOpenAI({
-    modelName: "gpt-4o-mini",
+  // Switched to Gemini 1.5 Flash for speed and efficiency
+  const model = new ChatGoogleGenerativeAI({
+    model: "gemini-1.5-flash",
     temperature: 0,
-    apiKey: process.env.OPENAI_API_KEY // Ensure this is set
+    apiKey: process.env.GOOGLE_API_KEY // Ensure GOOGLE_API_KEY is set in .env
   });
 
   const ExtractionSchema = z.object({
@@ -122,7 +123,7 @@ const stockManagerAgent = async (state: AgentState) => {
 // Workflow 1: Parsing Only
 const parseWorkflow = new StateGraph({
     channels: {
-      input: { value: (l : any, r: any) => r, default: () => "" },
+      input: { value: (l : any, r : any) => r, default: () => "" },
       parsedItems: { value: (l : any, r : any) => r, default: () => [] }
     }
   })

@@ -6,10 +6,9 @@
   "scripts": {
     "dev": "bun --hot run ./src/index.ts"
   },
-  "prisma" : {
-    "seed" : "bun prisma/seed.ts" 
+  "prisma": {
+    "seed": "bun prisma/seed.ts"
   },
-
   "devDependencies": {
     "@types/bun": "latest",
     "@types/express": "^5.0.5",
@@ -20,6 +19,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@langchain/google-genai": "^2.0.0",
     "@prisma/client": "^6.19.0",
     "dotenv": "^17.2.3",
     "jsonwebtoken": "^9.0.2",
