@@ -1,3 +1,4 @@
+import { executeWorkflow, parseWorkflow } from "../Agents/inventory";
 import type { ProductType } from "../generated/prisma/enums";
 import prisma from "../utils/prismaClient";
 
@@ -71,5 +72,26 @@ export const InventoryService = {
         return await prisma.product.create({
             data: { ...data, userId }
         });
+    },
+
+
+    /**
+     * Step 1: Voice -> JSON
+     * Returns a list of items for the user to review.
+     */
+    parseVoiceToDraft: async (text: string) => {
+      const app = parseWorkflow.compile();
+      const result = await app.invoke({ input: text });
+      return result.parsedItems;
+    },
+  
+    /**
+     * Step 2: Verified JSON -> DB
+     * Takes the (potentially edited) list and commits it.
+     */
+    confirmAndExecute: async (items: any[], userId : number) => {
+      const app = executeWorkflow.compile();
+      const result = await app.invoke({ parsedItems: items , userId});
+      return result.finalResult;
     }
 };
