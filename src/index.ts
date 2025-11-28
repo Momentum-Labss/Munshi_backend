@@ -16,6 +16,6 @@ app.use("/api/uddhar", uddharRouter)
 app.use("/api/inventory", inventoryRouter)
 app.use("/api/agent", agentRouter)
 
-app.listen(8080, () => {
-    console.log("The server is running of PORT 8080")
+app.listen(3000, () => {
+    console.log("The server is running of PORT 3000")
 })
