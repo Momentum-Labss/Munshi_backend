@@ -8,4 +8,6 @@ const router = Router();
 // Body: { "query": "aaj ki sale kitni hui?" } OR { "query": "50 coke add karo" }
 router.post("/ask", authenticate, agentController.ask);
 
+router.post('/ask/stream', authenticate, agentController.askStream);
+
 export default router;

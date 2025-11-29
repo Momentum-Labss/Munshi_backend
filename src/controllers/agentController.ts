@@ -28,5 +28,35 @@ export const agentController = {
             console.error("Master Agent Error:", error);
             return res.status(500).json({ success: false, message: "Munim Ji is offline" });
         }
+    },
+    askStream : async (req : AuthenticatedRequest, res : Response) => {
+        console.log(req)
+        const  query  = req.body.query;
+        const {userId} = req.user?.userId || req.body.userId
+        // Set SSE headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+    
+        try {
+        // Stream responses
+        for await (const update of MasterAgentService.streamRequest(userId, query)) {
+            // Send each update as SSE event
+            res.write(`data: ${JSON.stringify(update)}\n\n`);
+        }
+        
+        // Close connection
+        res.write('data: [DONE]\n\n');
+        res.end();
+        } catch (error) {
+        console.error('Streaming error:', error);
+        res.write(`data: ${JSON.stringify({ 
+            type: 'error', 
+            message: 'Something went wrong' 
+        })}\n\n`);
+        res.end();
+        }
+
     }
 };
