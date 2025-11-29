@@ -1,0 +1,1 @@
+export { GlobalVoiceWidget } from "./GlobalVoiceWidget";
