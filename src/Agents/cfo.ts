@@ -237,11 +237,25 @@ const transactionWorkflow = new StateGraph(CfoStateAnnotation)
 async function* streamFinancialQuery(userId: number, query: string) {
   console.log("💰 Munshi Agent: Processing financial query (STREAMING)...");
 
-  yield { type: 'status', message: 'समझ रहा हूँ...' };
+  // Send instant acknowledgment FIRST - before ANY processing
+  const greetingPhrases = [
+    "Ji boss, main iske upar kaam kar raha hu...",
+    "Haan ji, abhi check karta hu...",
+    "Rukiye, main dekh kar batata hu...",
+    "Ji sir, ek minute..."
+  ];
+
+  const randomIndex = Math.floor(Math.random() * greetingPhrases.length);
+  const selectedGreeting = (greetingPhrases[randomIndex] || greetingPhrases[0]) as string;
+
+  yield {
+    type: 'acknowledgment',
+    message: selectedGreeting
+  };
 
   const model = new ChatGoogleGenerativeAI({
     model: "gemini-2.5-flash",
-    temperature: 0,
+    temperature: 0.3,
     apiKey: process.env.GOOGLE_API_KEY,
     streaming: true
   });
@@ -615,23 +629,52 @@ async function* streamFinancialQuery(userId: number, query: string) {
     - "Stock low hai boss! Maggi sirf 5 packet bache, aur chawal bhi 2kg se kam hai. Order kar lo."
   `;
 
+  // Timeout messages while waiting for Gemini to start
+  const waitingMessages = [
+    "Maaf karein boss, thoda samay lag raha hai...",
+    "Bas ek minute aur, data bahut hai...",
+    "Dhyan se check kar raha hu, rukiye..."
+  ];
+
+  // Start streaming from Gemini
+  const streamStartTime = Date.now();
   const stream = await model.stream(prompt);
-  
+
   let fullText = '';
+  let lastWaitingMessageTime = streamStartTime;
+  let waitingMessageIndex = 0;
+
   for await (const chunk of stream) {
+    // Check if we should send a waiting message (before first chunk or during slow streaming)
+    const currentTime = Date.now();
+    const timeSinceLastMessage = currentTime - lastWaitingMessageTime;
+
+    if (timeSinceLastMessage >= 8000 && waitingMessageIndex < waitingMessages.length) {
+      yield {
+        type: 'waiting',
+        message: waitingMessages[waitingMessageIndex]
+      };
+      waitingMessageIndex++;
+      lastWaitingMessageTime = currentTime;
+    }
+
+    // Stream the actual Gemini response
     const text = chunk.content.toString();
     fullText += text;
-    yield { 
-      type: 'text', 
+    yield {
+      type: 'text',
       chunk: text,
-      fullText: fullText 
+      fullText: fullText
     };
+
+    // Reset waiting timer since we got a chunk
+    lastWaitingMessageTime = currentTime;
   }
 
-  yield { 
-    type: 'complete', 
+  yield {
+    type: 'complete',
     reply: fullText,
-    dataPoint: dataContext 
+    dataPoint: dataContext
   };
 }
 

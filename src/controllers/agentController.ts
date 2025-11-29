@@ -29,34 +29,110 @@ export const agentController = {
             return res.status(500).json({ success: false, message: "Munim Ji is offline" });
         }
     },
-    askStream : async (req : AuthenticatedRequest, res : Response) => {
-        console.log(req)
-        const  query  = req.body.query;
-        const {userId} = req.user?.userId || req.body.userId
-        // Set SSE headers
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
-    
+    askStream: async (req: AuthenticatedRequest, res: Response) => {
         try {
-        // Stream responses
-        for await (const update of MasterAgentService.streamRequest(userId, query)) {
-            // Send each update as SSE event
-            res.write(`data: ${JSON.stringify(update)}\n\n`);
-        }
-        
-        // Close connection
-        res.write('data: [DONE]\n\n');
-        res.end();
-        } catch (error) {
-        console.error('Streaming error:', error);
-        res.write(`data: ${JSON.stringify({ 
-            type: 'error', 
-            message: 'Something went wrong' 
-        })}\n\n`);
-        res.end();
-        }
+            const { query } = req.body;
 
+            if (!query) {
+                return res.status(400).json({ success: false, message: "Query is required" });
+            }
+
+            const userId = req.user?.userId || req.body.userId;
+
+            if (!userId) {
+                return res.status(401).json({ success: false, message: "User ID not found" });
+            }
+
+            console.log(`📡 Starting stream for userId: ${userId}, query: "${query}"`);
+
+            // Set SSE headers
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+            res.flushHeaders();
+
+            // Variables to track final result
+            let finalIntent = 'UNKNOWN';
+            let finalMessage = '';
+            let finalData: any = null;
+            let isVisual = false;
+
+            // Stream responses
+            for await (const update of MasterAgentService.streamRequest(userId, query)) {
+                console.log('Stream update:', update);
+
+                // Send instant acknowledgment
+                if (update.type === 'acknowledgment' && 'message' in update) {
+                    res.write(`data: ${JSON.stringify({
+                        type: 'acknowledgment',
+                        message: update.message
+                    })}\n\n`);
+                }
+
+                // Send waiting messages
+                if (update.type === 'waiting' && 'message' in update) {
+                    res.write(`data: ${JSON.stringify({
+                        type: 'waiting',
+                        message: update.message
+                    })}\n\n`);
+                }
+
+                // Stream LLM text chunks to frontend
+                if (update.type === 'text' && 'chunk' in update && 'fullText' in update) {
+                    res.write(`data: ${JSON.stringify({
+                        type: 'text',
+                        chunk: update.chunk,
+                        fullText: update.fullText
+                    })}\n\n`);
+                }
+
+                // Collect final result data
+                if (update.type === 'complete' && 'reply' in update && 'dataPoint' in update) {
+                    finalIntent = 'FINANCE_ANSWER';
+                    finalMessage = update.reply || '';
+                    finalData = update.dataPoint;
+                    isVisual = false;
+                } else if (update.type === 'INVENTORY_DRAFT' && 'message' in update && 'data' in update) {
+                    finalIntent = update.type;
+                    finalMessage = update.message || '';
+                    finalData = update.data;
+                    isVisual = 'isVisual' in update ? update.isVisual || false : false;
+                } else if (update.type === 'UNKNOWN' && 'message' in update && 'data' in update) {
+                    finalIntent = update.type;
+                    finalMessage = update.message || '';
+                    finalData = update.data;
+                    isVisual = 'isVisual' in update ? update.isVisual || false : false;
+                }
+            }
+
+            // Send final complete response
+            res.write(`data: ${JSON.stringify({
+                type: 'final',
+                success: true,
+                intent: finalIntent,
+                reply: finalMessage,
+                payload: finalData,
+                isVisual: isVisual
+            })}\n\n`);
+
+            res.end();
+
+        } catch (error: any) {
+            console.error('Streaming error:', error);
+
+            if (!res.headersSent) {
+                return res.status(500).json({
+                    success: false,
+                    message: error?.message || 'Streaming failed'
+                });
+            }
+
+            res.write(`data: ${JSON.stringify({
+                type: 'error',
+                message: error?.message || 'Something went wrong'
+            })}\n\n`);
+            res.end();
+        }
     }
 };
